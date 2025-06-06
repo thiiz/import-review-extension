@@ -4,13 +4,14 @@ Este é um web scraper que extrai avaliações de produtos na AliExpress e gera 
 
 ## Funcionalidades
 
-- Interface de linha de comando para inserir o link do produto
+- Interface web para inserir o link do produto
 - Extração de avaliações incluindo:
   - Texto da avaliação
   - Classificação (estrelas)
   - Imagens (quando disponíveis)
 - Geração automática de nomes aleatórios
-- Suporte para clicar no botão "Ver mais" para carregar mais avaliações
+- Visualização das avaliações em cards com design moderno
+- Possibilidade de visualizar as imagens das avaliações em tamanho maior
 
 ## Requisitos
 
@@ -35,26 +36,35 @@ yarn install
 
 ## Como Usar
 
-Execute o aplicativo:
+### Aplicação Web (Frontend + Backend)
+
+Para iniciar o servidor e a aplicação web:
 
 ```bash
 npm start
 ```
 
-ou
+Acesse `http://localhost:5000` em seu navegador para utilizar a aplicação web.
+
+### CLI (Command Line Interface)
+
+Para utilizar apenas a versão de linha de comando:
 
 ```bash
-yarn start
+npm run scrape
 ```
 
-O programa irá:
-1. Solicitar que você insira um link de produto válido da AliExpress
-2. Abrir um navegador automatizado e navegar até a página
-3. Tentar encontrar e clicar no botão "Ver mais" para carregar as avaliações
-4. Extrair as avaliações e exibi-las no console, com nomes gerados aleatoriamente
+## Modo de Funcionamento
+
+A aplicação:
+1. Recebe a URL de um produto do AliExpress
+2. Abre um navegador automatizado e navega até a página
+3. Tenta encontrar e clicar no botão "Ver mais" para carregar as avaliações
+4. Extrai as avaliações e as exibe na interface, com nomes gerados aleatoriamente
 
 ## Notas
 
-- O navegador será aberto em modo visível (não headless) para facilitar a depuração
+- Na versão de linha de comando, o navegador será aberto em modo visível (não headless) para facilitar a depuração
+- Na versão web, o navegador é executado em modo headless no servidor
 - Se o botão "Ver mais" não for encontrado, o programa tentará prosseguir com as avaliações disponíveis
 - Certifique-se de que o link é de um produto da AliExpress que contém avaliações

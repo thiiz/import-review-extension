@@ -2,13 +2,36 @@
   "name": "aliexpress-review-scraper",
   "version": "1.0.0",
   "description": "Web scraper for AliExpress product reviews",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js",
+    "build": "react-scripts build",
+    "dev": "react-scripts start",
+    "scrape": "node index.js"
   },
   "dependencies": {
-    "puppeteer": "^21.6.1",
+    "axios": "^1.9.0",
+    "bootstrap": "^5.3.6",
+    "chalk": "^4.1.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "inquirer": "^8.2.5",
-    "chalk": "^4.1.2"
+    "puppeteer": "^21.6.1",
+    "react": "^18.3.1",
+    "react-bootstrap": "^2.10.10",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

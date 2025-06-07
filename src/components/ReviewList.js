@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Row, Col, Spinner, Button } from 'react-bootstrap';
 import ReviewCard from './ReviewCard';
+import ProductUrlModal from './ProductUrlModal';
 import axios from 'axios';
 
 const ReviewList = ({ reviews, loading }) => {
-  const handleExportCSV = async () => {
+  const [showUrlModal, setShowUrlModal] = useState(false);
+
+  const handleExportClick = () => {
+    setShowUrlModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowUrlModal(false);
+  };
+
+  const handleExportCSV = async (productUrl, selectedReviews) => {
     try {
-      const response = await axios.post('/api/export-reviews', { reviews }, {
+      const response = await axios.post('/api/export-reviews', {
+        reviews: selectedReviews,
+        productUrl
+      }, {
         responseType: 'blob', // Important for file download
       });
 
@@ -21,6 +35,7 @@ const ReviewList = ({ reviews, loading }) => {
       // Clean up
       window.URL.revokeObjectURL(url);
       document.body.removeChild(link);
+      setShowUrlModal(false);
     } catch (error) {
       console.error('Erro ao exportar avaliações:', error);
       alert('Ocorreu um erro ao exportar as avaliações. Por favor, tente novamente.');
@@ -48,7 +63,7 @@ const ReviewList = ({ reviews, loading }) => {
         <h2>Avaliações ({reviews.length})</h2>
         <Button
           variant="success"
-          onClick={handleExportCSV}
+          onClick={handleExportClick}
           disabled={reviews.length === 0}
         >
           Exportar CSV
@@ -61,6 +76,13 @@ const ReviewList = ({ reviews, loading }) => {
           </Col>
         ))}
       </Row>
+
+      <ProductUrlModal
+        show={showUrlModal}
+        onHide={handleModalClose}
+        onSubmit={handleExportCSV}
+        reviews={reviews}
+      />
     </div>
   );
 };

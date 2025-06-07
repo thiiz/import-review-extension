@@ -1,0 +1,37 @@
+[
+  {
+    "name": "xman_us_f",
+    "value": "valor_do_cookie_aqui",
+    "domain": ".aliexpress.com",
+    "path": "/",
+    "expires": 1735689600,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "xman_t",
+    "value": "valor_do_cookie_aqui",
+    "domain": ".aliexpress.com",
+    "path": "/",
+    "expires": 1735689600,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "aep_usuc_f",
+    "value": "valor_do_cookie_aqui",
+    "domain": ".aliexpress.com",
+    "path": "/",
+    "expires": 1735689600,
+    "secure": true
+  },
+  {
+    "name": "_m_h5_tk",
+    "value": "valor_do_cookie_aqui",
+    "domain": ".aliexpress.com",
+    "path": "/",
+    "expires": 1735689600,
+    "httpOnly": true,
+    "secure": true
+  }
+]

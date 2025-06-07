@@ -1,7 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const puppeteer = require('puppeteer');
+const fs = require('fs');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 const nameGenerator = require('./names');
 
 const app = express();
@@ -125,18 +128,32 @@ function addNamesToReviews(reviews) {
 }
 
 // Convert reviews to CSV format
-function convertReviewsToCSV(reviews) {
+function convertReviewsToCSV(reviews, productUrl = '') {
   // CSV header
-  let csv = 'Nome,Avaliação,Texto,Imagens\n';
+  let csv = 'title,body,rating,review_date,reviewer_name,reviewer_email,product_url,picture_urls,product_id,product_handle\n';
+
+  // Generate random date from 2024 onwards
+  function generateRandomDate() {
+    const start = new Date(2024, 0, 1);
+    const end = new Date();
+    const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    return `${randomDate.getDate().toString().padStart(2, '0')}/${(randomDate.getMonth() + 1).toString().padStart(2, '0')}/${randomDate.getFullYear()}`;
+  }
 
   // Add each review as a row
   reviews.forEach(review => {
-    const name = review.name ? `"${review.name.replace(/"/g, '""')}"` : '';
+    const title = "Review"; // Default title
+    const body = review.text ? `"${review.text.replace(/"/g, '""')}"` : '';
     const rating = review.rating || 0;
-    const text = review.text ? `"${review.text.replace(/"/g, '""')}"` : '';
-    const images = review.images && review.images.length > 0 ? `"${review.images.join(', ')}"` : '';
+    const reviewDate = generateRandomDate();
+    const reviewerName = review.name ? `"${review.name.replace(/"/g, '""')}"` : '';
+    const reviewerEmail = ''; // Not provided in our data
+    const safeProductUrl = productUrl ? `"${productUrl.replace(/"/g, '""')}"` : '';
+    const pictureUrls = review.images && review.images.length > 0 ? `"${review.images.join(', ')}"` : '';
+    const productId = ''; // Not provided in our data
+    const productHandle = ''; // Not provided in our data
 
-    csv += `${name},${rating},${text},${images}\n`;
+    csv += `${title},${body},${rating},${reviewDate},${reviewerName},${reviewerEmail},${safeProductUrl},${pictureUrls},${productId},${productHandle}\n`;
   });
 
   return csv;
@@ -144,14 +161,14 @@ function convertReviewsToCSV(reviews) {
 
 // API endpoint to export reviews as CSV
 app.post('/api/export-reviews', (req, res) => {
-  const { reviews } = req.body;
+  const { reviews, productUrl } = req.body;
 
   if (!reviews || !Array.isArray(reviews)) {
     return res.status(400).json({ error: 'Dados de avaliações inválidos.' });
   }
 
   try {
-    const csv = convertReviewsToCSV(reviews);
+    const csv = convertReviewsToCSV(reviews, productUrl);
 
     // Set headers for file download
     res.setHeader('Content-Type', 'text/csv');
@@ -165,6 +182,41 @@ app.post('/api/export-reviews', (req, res) => {
   }
 });
 
+// Função para carregar cookies do arquivo
+function loadCookiesFromFile(filePath) {
+  try {
+    const cookiesString = fs.readFileSync(filePath, 'utf8');
+    const cookies = JSON.parse(cookiesString);
+
+    // Sanitizar cookies para remover propriedades problemáticas
+    return cookies.map(cookie => {
+      // Manter apenas as propriedades essenciais que o Puppeteer aceita
+      const sanitizedCookie = {
+        name: cookie.name,
+        value: cookie.value,
+        domain: cookie.domain,
+        path: cookie.path,
+        expires: cookie.expires,
+        httpOnly: cookie.httpOnly,
+        secure: cookie.secure,
+        sameSite: cookie.sameSite
+      };
+
+      // Remover propriedades undefined ou null
+      Object.keys(sanitizedCookie).forEach(key => {
+        if (sanitizedCookie[key] === undefined || sanitizedCookie[key] === null) {
+          delete sanitizedCookie[key];
+        }
+      });
+
+      return sanitizedCookie;
+    });
+  } catch (error) {
+    console.error('Erro ao carregar cookies:', error);
+    return null;
+  }
+}
+
 // API endpoint to scrape reviews
 app.post('/api/scrape-reviews', async (req, res) => {
   const { url } = req.body;
@@ -176,10 +228,64 @@ app.post('/api/scrape-reviews', async (req, res) => {
   try {
     const browser = await puppeteer.launch({
       headless: false,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process'
+      ]
     });
 
     const page = await browser.newPage();
+
+    // Definir User-Agent realista
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36');
+
+    // Definir configurações adicionais para evitar detecção
+    await page.evaluateOnNewDocument(() => {
+      // Remover webdriver
+      delete Object.getPrototypeOf(navigator).webdriver;
+
+      // Modificar o userAgent na página
+      Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
+
+      // Adicionar plugins falsos para parecer um navegador real
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5].map(() => ({
+          description: 'Chromium PDF Plugin',
+          filename: 'internal-pdf-viewer',
+          name: 'Chromium PDF Plugin'
+        }))
+      });
+    });
+
+    // Carregar e aplicar cookies
+    const cookies = loadCookiesFromFile('./aliexpress-cookies.json');
+    if (cookies && cookies.length > 0) {
+      try {
+        // Tentar aplicar todos os cookies de uma vez
+        await page.setCookie(...cookies);
+        console.log(`Cookies carregados com sucesso! (${cookies.length} cookies)`);
+      } catch (error) {
+        console.log('Erro ao aplicar todos os cookies de uma vez, tentando um por um:', error.message);
+
+        // Se falhar, tentar aplicar um por um
+        let successCount = 0;
+        for (const cookie of cookies) {
+          try {
+            await page.setCookie(cookie);
+            successCount++;
+          } catch (cookieError) {
+            console.log(`Erro ao aplicar cookie ${cookie.name}:`, cookieError.message);
+          }
+        }
+
+        console.log(`Aplicados ${successCount} de ${cookies.length} cookies com sucesso.`);
+      }
+    } else {
+      console.log('Nenhum cookie válido carregado. O site pode mostrar captcha.');
+    }
+
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
     // Scroll down to make sure the button is in view

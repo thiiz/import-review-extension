@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import ReviewCard from './ReviewCard';
 import ProductUrlModal from './ProductUrlModal';
-import axios from 'axios';
 import { Button } from './ui/button';
 
 const ReviewList = ({ reviews, loading }) => {
@@ -17,24 +16,17 @@ const ReviewList = ({ reviews, loading }) => {
 
   const handleExportCSV = async (productUrl, selectedReviews) => {
     try {
-      const response = await axios.post('/api/export-reviews', {
+      const result = await window.electron.ipcRenderer.invoke('export-reviews', {
         reviews: selectedReviews,
         productUrl
-      }, {
-        responseType: 'blob', // Important for file download
       });
 
-      // Create a download link and trigger it
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'avaliacoes.csv');
-      document.body.appendChild(link);
-      link.click();
+      if (result.success) {
+        alert(`Avaliações exportadas com sucesso para:\n${result.filePath}`);
+      } else if (result.error) {
+        alert(`Erro ao exportar avaliações: ${result.error}`);
+      }
 
-      // Clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(link);
       setShowUrlModal(false);
     } catch (error) {
       console.error('Erro ao exportar avaliações:', error);

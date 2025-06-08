@@ -1,106 +1,67 @@
 # AliExpress Review Scraper
 
-Este é um web scraper que extrai avaliações de produtos na AliExpress e gera nomes aleatórios para os avaliadores usando uma base de dados de nomes.
+An Electron-based application for scraping product reviews from AliExpress. This app allows you to extract reviews with ratings, text content, and images, then export them to CSV format.
 
-## Funcionalidades
+## Features
 
-- Interface web para inserir o link do produto
-- Extração de avaliações incluindo:
-  - Texto da avaliação
-  - Classificação (estrelas)
-  - Imagens (quando disponíveis)
-- Geração automática de nomes aleatórios
-- Visualização das avaliações em cards com design moderno
-- Possibilidade de visualizar as imagens das avaliações em tamanho maior
-- **Prevenção de Captchas** com técnicas de stealth e cookies de sessão
-- **Exportação de CSV** para importação em outras plataformas
+- Extract product reviews from AliExpress product pages
+- Support for reviews with text and images
+- Filter reviews by rating, content, and other criteria
+- Export selected reviews to CSV format
+- Support for cookie authentication to avoid captchas
 
-## Requisitos
+## Installation
 
-- Node.js (versão 14 ou superior)
-- npm ou yarn
-
-## Instalação
-
-1. Clone este repositório ou baixe os arquivos
-2. Navegue até o diretório do projeto
-3. Instale as dependências:
+1. Clone this repository
+2. Install dependencies:
 
 ```bash
 npm install
 ```
 
-ou
+## Usage
 
-```bash
-yarn install
-```
-
-## Como Usar
-
-### Exportar Cookies (Recomendado para evitar Captchas)
-
-Antes de usar o scraper, recomendamos exportar cookies de uma sessão autenticada:
-
-```bash
-node export-cookies.js
-```
-
-Isso abrirá um navegador onde você deve:
-1. Fazer login manualmente na sua conta AliExpress
-2. Aguardar 2 minutos para o script exportar os cookies
-3. O arquivo `aliexpress-cookies.json` será criado automaticamente
-
-### Aplicação Web (Frontend + Backend)
-
-Para iniciar o servidor e a aplicação web:
+### Running in Development Mode
 
 ```bash
 npm start
 ```
 
-Acesse `http://localhost:5000` em seu navegador para utilizar a aplicação web.
+This will start both the React development server and the Electron app.
 
-### CLI (Command Line Interface)
+### Exporting Cookies (Recommended)
 
-Para utilizar apenas a versão de linha de comando:
+To avoid captchas, it's recommended to first export your cookies:
 
 ```bash
-npm run scrape
+npm run export-cookies
 ```
 
-## Modo de Funcionamento
+This will open a browser window where you can login to AliExpress. After login, the cookies will be saved automatically and used in future scraping operations.
 
-A aplicação:
-1. Recebe a URL de um produto do AliExpress
-2. Abre um navegador automatizado e navega até a página
-3. Aplica técnicas anti-detecção e carrega cookies (se disponíveis)
-4. Tenta encontrar e clicar no botão "Ver mais" para carregar as avaliações
-5. Extrai as avaliações e as exibe na interface, com nomes gerados aleatoriamente
-6. Permite exportar as avaliações como CSV
+### Building for Production
 
-## Técnicas Anti-Captcha
+```bash
+npm run package
+```
 
-Este scraper implementa diversas técnicas para evitar detecção:
+This will build both the React app and package it with Electron for your platform.
 
-- **Puppeteer Stealth**: Usa o plugin `puppeteer-extra-plugin-stealth` para mascarar sinais de automação
-- **Cookies de Sessão**: Reutiliza cookies de uma sessão autenticada real
-- **User-Agent Realista**: Simula um navegador comum e moderno
-- **Comportamento Humanizado**: Implementa delays e interações naturais
+## How to Use
 
-## Exportação de CSV
+1. Launch the app
+2. Enter the URL of an AliExpress product page in the input field
+3. Click "Obter Avaliações" (Get Reviews)
+4. Wait for the scraping process to complete
+5. Use the "Exportar CSV" button to export reviews
+6. Set product URL and select which reviews to include in the export
+7. Save the CSV file to your desired location
 
-É possível exportar as avaliações como CSV para importação em outras plataformas, como Shopify. O formato exportado inclui:
-- Título da avaliação
-- Corpo do texto
-- Classificação (estrelas)
-- Data da avaliação (gerada aleatoriamente)
-- Nome do avaliador (gerado aleatoriamente)
-- URLs das imagens
+## Requirements
 
-## Notas
+- Node.js 14+
+- npm 6+
 
-- Se enfrentar captchas frequentes, execute o script `export-cookies.js` para gerar novos cookies
-- Os cookies expiram com o tempo, então pode ser necessário regenerá-los periodicamente
-- Na versão de linha de comando, o navegador será aberto em modo visível (não headless) para facilitar a depuração
-- Certifique-se de que o link é de um produto da AliExpress que contém avaliações
+## License
+
+MIT

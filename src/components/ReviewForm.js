@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Button } from './ui/button';
 
 const ReviewForm = ({ onReviewsFetched, setLoading, setError, setSuccess }) => {
@@ -33,19 +32,16 @@ const ReviewForm = ({ onReviewsFetched, setLoading, setError, setSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/scrape-reviews', { url });
+      const result = await window.electron.ipcRenderer.invoke('scrape-reviews', { url });
 
-      if (response.data.success) {
-        onReviewsFetched(response.data);
+      if (result.success) {
+        onReviewsFetched(result);
       } else {
-        setError('Ocorreu um erro ao tentar obter as avaliações. Tente novamente.');
+        setError(result.error || 'Ocorreu um erro ao tentar obter as avaliações. Tente novamente.');
       }
     } catch (error) {
-      if (error.response && error.response.data && error.response.data.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Ocorreu um erro ao tentar obter as avaliações. Tente novamente.');
-      }
+      setError('Ocorreu um erro ao tentar obter as avaliações. Tente novamente.');
+      console.error('Error during scraping:', error);
     } finally {
       setLoading(false);
     }

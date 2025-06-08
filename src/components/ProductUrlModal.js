@@ -1,28 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, InputGroup, Table, ButtonGroup, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Modal, Button, Form, InputGroup, Table, Badge, Card, Row, Col } from 'react-bootstrap';
 
 const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
   const [productUrl, setProductUrl] = useState('');
   const [error, setError] = useState('');
   const [selectedReviews, setSelectedReviews] = useState([]);
   const [selectAll, setSelectAll] = useState(true);
-  const [activeFilters, setActiveFilters] = useState(['all']);
-
-  // Define filter categories for mutual exclusivity
-  const filterCategories = {
-    rating: ['5stars', 'positive', 'neutral', 'negative'],
-    // Each content filter is in its own category so they can be combined
-    withImages: ['withImages'],
-    withText: ['withText'],
-    detailed: ['detailed']
-  };
+  const [activeFilters, setActiveFilters] = useState({
+    rating: 'all',
+    hasImages: false,
+    hasText: false,
+    isDetailed: false
+  });
 
   // Reset selections when modal opens with new reviews
   useEffect(() => {
     if (show && reviews) {
       setSelectedReviews(reviews.map((_, index) => index));
       setSelectAll(true);
-      setActiveFilters(['all']);
+      setActiveFilters({
+        rating: 'all',
+        hasImages: false,
+        hasText: false,
+        isDetailed: false
+      });
     }
   }, [show, reviews]);
 
@@ -73,139 +74,56 @@ const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
     setSelectAll(!selectAll);
   };
 
-  // Get the category of a filter
-  const getFilterCategory = (filter) => {
-    for (const [category, filters] of Object.entries(filterCategories)) {
-      if (filters.includes(filter)) {
-        return category;
-      }
-    }
-    return null;
-  };
-
-  // Toggle a filter in the active filters list
-  const toggleFilter = (filterType) => {
-    setActiveFilters(prevFilters => {
-      // Special handling for 'all' filter
-      if (filterType === 'all') {
-        return ['all'];
-      }
-
-      // Start with removing 'all' if it's present
-      let newFilters = prevFilters.filter(f => f !== 'all');
-
-      // If filter is already active, remove it
-      if (newFilters.includes(filterType)) {
-        newFilters = newFilters.filter(f => f !== filterType);
-        // If no filters remain, select 'all'
-        return newFilters.length === 0 ? ['all'] : newFilters;
-      }
-      // Add the filter, removing any incompatible ones
-      else {
-        // Check if the filter belongs to a category
-        const category = getFilterCategory(filterType);
-
-        if (category) {
-          // Remove any other filters from the same category
-          newFilters = newFilters.filter(f => !filterCategories[category].includes(f));
-        }
-
-        return [...newFilters, filterType];
-      }
-    });
-  };
-
-  // Apply active filters whenever they change
+  // Apply filters whenever they change
   useEffect(() => {
     if (!reviews || reviews.length === 0) return;
 
-    // If 'all' is selected, select all reviews
-    if (activeFilters.includes('all')) {
-      setSelectedReviews(reviews.map((_, index) => index));
-      setSelectAll(true);
-      return;
-    }
-
-    // Create filter functions for each active filter
-    const filterFunctions = {
-      positive: (review) => review.rating >= 4,
-      negative: (review) => review.rating <= 2,
-      neutral: (review) => review.rating === 3,
-      withImages: (review) => review.images && review.images.length > 0,
-      withText: (review) => review.text && review.text.trim().length > 0,
-      detailed: (review) => (review.text && review.text.trim().length > 30) &&
-                          (review.images && review.images.length > 0),
-      '5stars': (review) => review.rating === 5
-    };
-
-    // Get indexes of reviews that match ALL of the selected filters (AND operation)
     const matchingIndexes = reviews
       .map((review, index) => ({ review, index }))
-      .filter(({ review }) =>
-        activeFilters.every(filter =>
-          filterFunctions[filter] && filterFunctions[filter](review)
-        )
-      )
+      .filter(({ review }) => {
+        // Rating filter
+        let ratingMatch = true;
+        if (activeFilters.rating === 'positive') {
+          ratingMatch = review.rating >= 4;
+        } else if (activeFilters.rating === 'neutral') {
+          ratingMatch = review.rating === 3;
+        } else if (activeFilters.rating === 'negative') {
+          ratingMatch = review.rating <= 2;
+        } else if (activeFilters.rating === '5stars') {
+          ratingMatch = review.rating === 5;
+        }
+
+        // Content filters - only apply if they're turned on
+        const imageMatch = !activeFilters.hasImages || (review.images && review.images.length > 0);
+        const textMatch = !activeFilters.hasText || (review.text && review.text.trim().length > 0);
+        const detailedMatch = !activeFilters.isDetailed ||
+          ((review.text && review.text.trim().length > 30) && (review.images && review.images.length > 0));
+
+        return ratingMatch && imageMatch && textMatch && detailedMatch;
+      })
       .map(item => item.index);
 
     setSelectedReviews(matchingIndexes);
     setSelectAll(matchingIndexes.length === reviews.length);
   }, [activeFilters, reviews]);
 
-  // Get count for each filter category
+  // Get counts for each filter
   const getFilterCounts = () => {
     if (!reviews) return {};
 
-    const basicCounts = {
+    return {
       all: reviews.length,
       positive: reviews.filter(review => review.rating >= 4).length,
       negative: reviews.filter(review => review.rating <= 2).length,
       neutral: reviews.filter(review => review.rating === 3).length,
+      '5stars': reviews.filter(review => review.rating === 5).length,
       withImages: reviews.filter(review => review.images && review.images.length > 0).length,
       withText: reviews.filter(review => review.text && review.text.trim().length > 0).length,
       detailed: reviews.filter(review =>
         (review.text && review.text.trim().length > 30) &&
         (review.images && review.images.length > 0)
-      ).length,
-      '5stars': reviews.filter(review => review.rating === 5).length,
+      ).length
     };
-
-    // If there are active filters that are not 'all', calculate intersection counts
-    if (activeFilters.length > 0 && !activeFilters.includes('all')) {
-      const filterFunctions = {
-        positive: (review) => review.rating >= 4,
-        negative: (review) => review.rating <= 2,
-        neutral: (review) => review.rating === 3,
-        withImages: (review) => review.images && review.images.length > 0,
-        withText: (review) => review.text && review.text.trim().length > 0,
-        detailed: (review) => (review.text && review.text.trim().length > 30) &&
-                            (review.images && review.images.length > 0),
-        '5stars': (review) => review.rating === 5
-      };
-
-      // Get current filter base
-      const currentFilterBase = [...activeFilters];
-
-      // For each filter not in the active set, calculate how many would match if it was added
-      Object.keys(filterFunctions).forEach(filter => {
-        if (!activeFilters.includes(filter)) {
-          // Check if this filter is compatible (not in the same category as an existing filter)
-          const category = getFilterCategory(filter);
-          const hasConflict = category && activeFilters.some(f => filterCategories[category].includes(f));
-
-          if (hasConflict) {
-            basicCounts[filter] = 0; // Set to 0 if there's a conflict
-          } else {
-            // Calculate intersection with current filters
-            basicCounts[filter] = reviews.filter(review =>
-              [...currentFilterBase, filter].every(f => filterFunctions[f](review))
-            ).length;
-          }
-        }
-      });
-    }
-
-    return basicCounts;
   };
 
   const counts = getFilterCounts();
@@ -223,45 +141,33 @@ const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
       <Badge
         bg="secondary"
         className="ms-1"
-        style={{ fontSize: '0.7em' }}
       >
         {count} ({percentage}%)
       </Badge>
     );
   };
 
-  // Check if a filter is active
-  const isFilterActive = (filterType) => activeFilters.includes(filterType);
-
-  // Check if a filter is disabled (incompatible with current selections)
-  const isFilterDisabled = (filterType) => {
-    if (activeFilters.includes('all')) return false;
-    if (isFilterActive(filterType)) return false;
-
-    // Check if this filter is in a category where another filter is already selected
-    const category = getFilterCategory(filterType);
-    if (category) {
-      return activeFilters.some(filter => filterCategories[category].includes(filter));
-    }
-
-    return false;
+  const handleRatingFilterChange = (rating) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      rating
+    }));
   };
 
-  // Get button variant based on filter type and active state
-  const getButtonVariant = (filterType) => {
-    const filterStyles = {
-      all: 'primary',
-      '5stars': 'primary',
-      positive: 'success',
-      neutral: 'warning',
-      negative: 'danger',
-      withImages: 'info',
-      withText: 'secondary',
-      detailed: 'dark'
-    };
+  const toggleContentFilter = (filterName) => {
+    setActiveFilters(prev => ({
+      ...prev,
+      [filterName]: !prev[filterName]
+    }));
+  };
 
-    const baseStyle = filterStyles[filterType] || 'primary';
-    return isFilterActive(filterType) ? baseStyle : `outline-${baseStyle}`;
+  const resetFilters = () => {
+    setActiveFilters({
+      rating: 'all',
+      hasImages: false,
+      hasText: false,
+      isDetailed: false
+    });
   };
 
   return (
@@ -286,133 +192,123 @@ const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
 
         <div className="mb-3">
           <div className="d-flex justify-content-between align-items-center mb-2">
-            <strong>Filtros (combinados com E lógico):</strong>
-            <small className="text-muted">
-              {selectedReviews.length} de {reviews?.length || 0} avaliações selecionadas
-            </small>
+            <h5 className="mb-0">Filtros</h5>
+            <div>
+              <small className="text-muted me-2">
+                {selectedReviews.length} de {reviews?.length || 0} avaliações selecionadas
+              </small>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                onClick={resetFilters}
+              >
+                Limpar filtros
+              </Button>
+            </div>
           </div>
 
-          <div className="filter-buttons" style={{ overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '10px' }}>
-            <ButtonGroup size="sm" className="flex-wrap">
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Todas as avaliações</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('all')}
-                  onClick={() => toggleFilter('all')}
-                  className="me-1 mb-1"
-                >
-                  Todas {createBadge(counts.all, counts.all)}
-                </Button>
-              </OverlayTrigger>
+          <Row>
+            <Col md={6} className="mb-3">
+              <Card>
+                <Card.Header className="py-2">
+                  <strong>Classificação</strong>
+                </Card.Header>
+                <Card.Body className="py-2">
+                  <Form>
+                    <Form.Check
+                      type="radio"
+                      name="ratingFilter"
+                      id="filter-all"
+                      label={<>Todas {createBadge(counts.all, counts.all)}</>}
+                      checked={activeFilters.rating === 'all'}
+                      onChange={() => handleRatingFilterChange('all')}
+                      className="mb-1"
+                    />
+                    <Form.Check
+                      type="radio"
+                      name="ratingFilter"
+                      id="filter-5stars"
+                      label={<>5 Estrelas {createBadge(counts['5stars'], counts.all)}</>}
+                      checked={activeFilters.rating === '5stars'}
+                      onChange={() => handleRatingFilterChange('5stars')}
+                      className="mb-1"
+                    />
+                    <Form.Check
+                      type="radio"
+                      name="ratingFilter"
+                      id="filter-positive"
+                      label={<>Positivas (4-5★) {createBadge(counts.positive, counts.all)}</>}
+                      checked={activeFilters.rating === 'positive'}
+                      onChange={() => handleRatingFilterChange('positive')}
+                      className="mb-1"
+                    />
+                    <Form.Check
+                      type="radio"
+                      name="ratingFilter"
+                      id="filter-neutral"
+                      label={<>Neutras (3★) {createBadge(counts.neutral, counts.all)}</>}
+                      checked={activeFilters.rating === 'neutral'}
+                      onChange={() => handleRatingFilterChange('neutral')}
+                      className="mb-1"
+                    />
+                    <Form.Check
+                      type="radio"
+                      name="ratingFilter"
+                      id="filter-negative"
+                      label={<>Negativas (1-2★) {createBadge(counts.negative, counts.all)}</>}
+                      checked={activeFilters.rating === 'negative'}
+                      onChange={() => handleRatingFilterChange('negative')}
+                    />
+                  </Form>
+                </Card.Body>
+              </Card>
+            </Col>
 
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações com 5 estrelas</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('5stars')}
-                  onClick={() => toggleFilter('5stars')}
-                  disabled={isFilterDisabled('5stars')}
-                  className="me-1 mb-1"
-                >
-                  5 Estrelas {createBadge(counts['5stars'], counts.all)}
-                </Button>
-              </OverlayTrigger>
+            <Col md={6} className="mb-3">
+              <Card>
+                <Card.Header className="py-2">
+                  <strong>Conteúdo</strong>
+                </Card.Header>
+                <Card.Body className="py-2">
+                  <Form>
+                    <Form.Check
+                      type="switch"
+                      id="filter-images"
+                      label={<>Com Imagens {createBadge(counts.withImages, counts.all)}</>}
+                      checked={activeFilters.hasImages}
+                      onChange={() => toggleContentFilter('hasImages')}
+                      className="mb-2"
+                    />
+                    <Form.Check
+                      type="switch"
+                      id="filter-text"
+                      label={<>Com Texto {createBadge(counts.withText, counts.all)}</>}
+                      checked={activeFilters.hasText}
+                      onChange={() => toggleContentFilter('hasText')}
+                      className="mb-2"
+                    />
+                    <Form.Check
+                      type="switch"
+                      id="filter-detailed"
+                      label={<>Detalhadas {createBadge(counts.detailed, counts.all)}</>}
+                      checked={activeFilters.isDetailed}
+                      onChange={() => toggleContentFilter('isDetailed')}
+                      className="mb-2"
+                    />
+                  </Form>
+                </Card.Body>
+              </Card>
 
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações positivas (4-5 estrelas)</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('positive')}
-                  onClick={() => toggleFilter('positive')}
-                  disabled={isFilterDisabled('positive')}
-                  className="me-1 mb-1"
-                >
-                  Positivas {createBadge(counts.positive, counts.all)}
-                </Button>
-              </OverlayTrigger>
-
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações neutras (3 estrelas)</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('neutral')}
-                  onClick={() => toggleFilter('neutral')}
-                  disabled={isFilterDisabled('neutral')}
-                  className="me-1 mb-1"
-                >
-                  Neutras {createBadge(counts.neutral, counts.all)}
-                </Button>
-              </OverlayTrigger>
-
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações negativas (1-2 estrelas)</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('negative')}
-                  onClick={() => toggleFilter('negative')}
-                  disabled={isFilterDisabled('negative')}
-                  className="me-1 mb-1"
-                >
-                  Negativas {createBadge(counts.negative, counts.all)}
-                </Button>
-              </OverlayTrigger>
-
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações com imagens</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('withImages')}
-                  onClick={() => toggleFilter('withImages')}
-                  className="me-1 mb-1"
-                >
-                  Com Imagens {createBadge(counts.withImages, counts.all)}
-                </Button>
-              </OverlayTrigger>
-
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações com texto</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('withText')}
-                  onClick={() => toggleFilter('withText')}
-                  className="me-1 mb-1"
-                >
-                  Com Texto {createBadge(counts.withText, counts.all)}
-                </Button>
-              </OverlayTrigger>
-
-              <OverlayTrigger
-                placement="top"
-                overlay={<Tooltip>Avaliações detalhadas (com texto longo e imagens)</Tooltip>}
-              >
-                <Button
-                  variant={getButtonVariant('detailed')}
-                  onClick={() => toggleFilter('detailed')}
-                  disabled={isFilterDisabled('detailed')}
-                  className="me-1 mb-1"
-                >
-                  Detalhadas {createBadge(counts.detailed, counts.all)}
-                </Button>
-              </OverlayTrigger>
-            </ButtonGroup>
-          </div>
-
-          <Form.Check
-            type="checkbox"
-            id="select-all"
-            label="Selecionar todas"
-            checked={selectAll}
-            onChange={handleSelectAll}
-            className="mt-2"
-          />
+              <Form.Check
+                type="checkbox"
+                id="select-all"
+                label="Selecionar todas"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="mt-2"
+              />
+            </Col>
+          </Row>
         </div>
 
         <div className="table-responsive" style={{ maxHeight: '300px', overflowY: 'auto' }}>

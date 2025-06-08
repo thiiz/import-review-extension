@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, InputGroup, Table, Badge, Card, Row, Col } from 'react-bootstrap';
+import { Button } from './ui/button';
 
 const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
   const [productUrl, setProductUrl] = useState('');
@@ -138,12 +138,9 @@ const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
   const createBadge = (count, total) => {
     const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
     return (
-      <Badge
-        bg="secondary"
-        className="ms-1"
-      >
+      <span className="ml-1 text-xs bg-secondary text-secondary-foreground rounded px-2 py-0.5">
         {count} ({percentage}%)
-      </Badge>
+      </span>
     );
   };
 
@@ -170,192 +167,213 @@ const ProductUrlModal = ({ show, onHide, onSubmit, reviews }) => {
     });
   };
 
-  return (
-    <Modal show={show} onHide={onHide} centered size="lg" dialogClassName="export-modal">
-      <Modal.Header closeButton>
-        <Modal.Title>Exportar Avaliações</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <p>Informe a URL do produto para incluir no arquivo CSV de exportação:</p>
-        <Form className="mb-4">
-          <InputGroup>
-            <Form.Control
-              type="url"
-              placeholder="https://..."
-              value={productUrl}
-              onChange={(e) => setProductUrl(e.target.value)}
-              isInvalid={!!error}
-            />
-          </InputGroup>
-          {error && <Form.Text className="text-danger">{error}</Form.Text>}
-        </Form>
+  if (!show) return null;
 
-        <div className="mb-3">
-          <div className="d-flex justify-content-between align-items-center mb-2">
-            <h5 className="mb-0">Filtros</h5>
-            <div>
-              <small className="text-muted me-2">
-                {selectedReviews.length} de {reviews?.length || 0} avaliações selecionadas
-              </small>
-              <Button
-                variant="outline-secondary"
-                size="sm"
-                onClick={resetFilters}
-              >
-                Limpar filtros
-              </Button>
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+      <div className="bg-background rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Exportar Avaliações</h2>
+            <button
+              onClick={onHide}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p className="mb-4">Informe a URL do produto para incluir no arquivo CSV de exportação:</p>
+          <div className="mb-6">
+            <div className="flex flex-col space-y-2">
+              <input
+                type="url"
+                placeholder="https://..."
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-md ${
+                  error ? 'border-destructive' : 'border-input'
+                } bg-background`}
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
           </div>
 
-          <Row>
-            <Col md={6} className="mb-3">
-              <Card>
-                <Card.Header className="py-2">
-                  <strong>Classificação</strong>
-                </Card.Header>
-                <Card.Body className="py-2">
-                  <Form>
-                    <Form.Check
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Filtros</h3>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">
+                  {selectedReviews.length} de {reviews?.length || 0} avaliações selecionadas
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetFilters}
+                >
+                  Limpar filtros
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border rounded-md">
+                <div className="bg-muted px-4 py-2 font-medium">
+                  Classificação
+                </div>
+                <div className="p-3 space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
                       type="radio"
                       name="ratingFilter"
-                      id="filter-all"
-                      label={<>Todas {createBadge(counts.all, counts.all)}</>}
                       checked={activeFilters.rating === 'all'}
                       onChange={() => handleRatingFilterChange('all')}
-                      className="mb-1"
+                      className="h-4 w-4"
                     />
-                    <Form.Check
+                    <span>Todas {createBadge(counts.all, counts.all)}</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
                       type="radio"
                       name="ratingFilter"
-                      id="filter-5stars"
-                      label={<>5 Estrelas {createBadge(counts['5stars'], counts.all)}</>}
                       checked={activeFilters.rating === '5stars'}
                       onChange={() => handleRatingFilterChange('5stars')}
-                      className="mb-1"
+                      className="h-4 w-4"
                     />
-                    <Form.Check
+                    <span>5 Estrelas {createBadge(counts['5stars'], counts.all)}</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
                       type="radio"
                       name="ratingFilter"
-                      id="filter-positive"
-                      label={<>Positivas (4-5★) {createBadge(counts.positive, counts.all)}</>}
                       checked={activeFilters.rating === 'positive'}
                       onChange={() => handleRatingFilterChange('positive')}
-                      className="mb-1"
+                      className="h-4 w-4"
                     />
-                    <Form.Check
+                    <span>Positivas (4-5★) {createBadge(counts.positive, counts.all)}</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
                       type="radio"
                       name="ratingFilter"
-                      id="filter-neutral"
-                      label={<>Neutras (3★) {createBadge(counts.neutral, counts.all)}</>}
                       checked={activeFilters.rating === 'neutral'}
                       onChange={() => handleRatingFilterChange('neutral')}
-                      className="mb-1"
+                      className="h-4 w-4"
                     />
-                    <Form.Check
+                    <span>Neutras (3★) {createBadge(counts.neutral, counts.all)}</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
                       type="radio"
                       name="ratingFilter"
-                      id="filter-negative"
-                      label={<>Negativas (1-2★) {createBadge(counts.negative, counts.all)}</>}
                       checked={activeFilters.rating === 'negative'}
                       onChange={() => handleRatingFilterChange('negative')}
+                      className="h-4 w-4"
                     />
-                  </Form>
-                </Card.Body>
-              </Card>
-            </Col>
+                    <span>Negativas (1-2★) {createBadge(counts.negative, counts.all)}</span>
+                  </label>
+                </div>
+              </div>
 
-            <Col md={6} className="mb-3">
-              <Card>
-                <Card.Header className="py-2">
-                  <strong>Conteúdo</strong>
-                </Card.Header>
-                <Card.Body className="py-2">
-                  <Form>
-                    <Form.Check
-                      type="switch"
-                      id="filter-images"
-                      label={<>Com Imagens {createBadge(counts.withImages, counts.all)}</>}
+              <div className="border rounded-md">
+                <div className="bg-muted px-4 py-2 font-medium">
+                  Conteúdo
+                </div>
+                <div className="p-3 space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
                       checked={activeFilters.hasImages}
                       onChange={() => toggleContentFilter('hasImages')}
-                      className="mb-2"
+                      className="h-4 w-4"
                     />
-                    <Form.Check
-                      type="switch"
-                      id="filter-text"
-                      label={<>Com Texto {createBadge(counts.withText, counts.all)}</>}
+                    <span>Com imagens {createBadge(counts.withImages, counts.all)}</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
                       checked={activeFilters.hasText}
                       onChange={() => toggleContentFilter('hasText')}
-                      className="mb-2"
+                      className="h-4 w-4"
                     />
-                    <Form.Check
-                      type="switch"
-                      id="filter-detailed"
-                      label={<>Detalhadas {createBadge(counts.detailed, counts.all)}</>}
+                    <span>Com texto {createBadge(counts.withText, counts.all)}</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
                       checked={activeFilters.isDetailed}
                       onChange={() => toggleContentFilter('isDetailed')}
-                      className="mb-2"
+                      className="h-4 w-4"
                     />
-                  </Form>
-                </Card.Body>
-              </Card>
+                    <span>Detalhadas {createBadge(counts.detailed, counts.all)}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
 
-              <Form.Check
-                type="checkbox"
-                id="select-all"
-                label="Selecionar todas"
-                checked={selectAll}
-                onChange={handleSelectAll}
-                className="mt-2"
-              />
-            </Col>
-          </Row>
-        </div>
+          <div className="border rounded-md mt-4 overflow-hidden">
+            <div className="bg-muted px-4 py-2 flex items-center">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4"
+                />
+                <span className="font-medium">Selecionar todas</span>
+              </label>
+            </div>
+            <div className="max-h-60 overflow-y-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="w-12 px-4 py-2"></th>
+                    <th className="px-4 py-2 text-left">Avaliação</th>
+                    <th className="px-4 py-2 text-left">Comentário</th>
+                    <th className="px-4 py-2 text-center">Imagens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reviews.map((review, index) => (
+                    <tr key={index} className={`border-t ${selectedReviews.includes(index) ? 'bg-primary/5' : ''}`}>
+                      <td className="px-4 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedReviews.includes(index)}
+                          onChange={() => toggleReview(index)}
+                          className="h-4 w-4"
+                        />
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex text-amber-500">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={i < review.rating ? "text-amber-500" : "text-gray-300"}>★</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">{truncateText(review.text)}</td>
+                      <td className="px-4 py-2 text-center">
+                        {review.images && review.images.length > 0 ? review.images.length : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-        <div className="table-responsive" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          <Table striped bordered hover size="sm">
-            <thead>
-              <tr>
-                <th style={{ width: '50px' }}></th>
-                <th style={{ width: '100px' }}>Avaliador</th>
-                <th>Avaliação</th>
-                <th style={{ width: '80px' }}>Estrelas</th>
-                <th style={{ width: '80px' }}>Imagens</th>
-              </tr>
-            </thead>
-            <tbody>
-              {reviews && reviews.map((review, index) => (
-                <tr key={index}>
-                  <td className="text-center">
-                    <Form.Check
-                      type="checkbox"
-                      id={`review-${index}`}
-                      checked={selectedReviews.includes(index)}
-                      onChange={() => toggleReview(index)}
-                    />
-                  </td>
-                  <td>{review.name ? truncateText(review.name, 20) : 'N/A'}</td>
-                  <td>{truncateText(review.text)}</td>
-                  <td className="text-center">{review.rating}/5</td>
-                  <td className="text-center">{review.images?.length || 0}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <div className="mt-6 flex justify-end space-x-2">
+            <Button variant="outline" onClick={onHide}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSubmit}>
+              Exportar CSV
+            </Button>
+          </div>
         </div>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onHide}>
-          Cancelar
-        </Button>
-        <Button
-          variant="primary"
-          onClick={handleSubmit}
-          disabled={selectedReviews.length === 0}
-        >
-          Exportar {selectedReviews.length} Avaliação(ões)
-        </Button>
-      </Modal.Footer>
-    </Modal>
+      </div>
+    </div>
   );
 };
 

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
 import ReviewForm from './components/ReviewForm';
 import ReviewList from './components/ReviewList';
-import './styles/index.css';
+import { Button } from './components/ui/button';
 
 function App() {
   const [reviews, setReviews] = useState([]);
@@ -16,42 +15,36 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <Container>
-        <Row className="justify-content-center">
-          <Col>
-            <header className="header">
-              <h1>AliExpress Review Scraper</h1>
-              <p>Digite a URL de um produto do AliExpress para visualizar as avaliações</p>
-            </header>
-          </Col>
-        </Row>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-primary mb-2">AliExpress Review Scraper</h1>
+          <p className="text-muted-foreground">Digite a URL de um produto do AliExpress para visualizar as avaliações</p>
+        </header>
 
-        <Row className="justify-content-center">
-          <Col md={8}>
-            <ReviewForm
-              onReviewsFetched={handleReviewsFetched}
-              setLoading={setLoading}
-              setError={setError}
-              setSuccess={setSuccess}
-            />
+        <div className="max-w-3xl mx-auto">
+          <ReviewForm
+            onReviewsFetched={handleReviewsFetched}
+            setLoading={setLoading}
+            setError={setError}
+            setSuccess={setSuccess}
+          />
 
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+          {error && (
+            <div className="p-4 my-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+              {error}
+            </div>
+          )}
 
-            {success && (
-              <div className="success-message">
-                {success}
-              </div>
-            )}
-          </Col>
-        </Row>
+          {success && (
+            <div className="p-4 my-4 bg-primary/10 border border-primary rounded-md text-primary">
+              {success}
+            </div>
+          )}
+        </div>
 
         <ReviewList reviews={reviews} loading={loading} />
-      </Container>
+      </div>
     </div>
   );
 }

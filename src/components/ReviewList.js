@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Row, Col, Spinner, Button } from 'react-bootstrap';
 import ReviewCard from './ReviewCard';
 import ProductUrlModal from './ProductUrlModal';
 import axios from 'axios';
+import { Button } from './ui/button';
 
 const ReviewList = ({ reviews, loading }) => {
   const [showUrlModal, setShowUrlModal] = useState(false);
@@ -44,11 +44,9 @@ const ReviewList = ({ reviews, loading }) => {
 
   if (loading) {
     return (
-      <div className="loader">
-        <Spinner animation="border" role="status" variant="primary">
-          <span className="visually-hidden">Carregando...</span>
-        </Spinner>
-        <p>Obtendo avaliações. Isso pode levar alguns segundos...</p>
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <p className="mt-4 text-muted-foreground">Obtendo avaliações. Isso pode levar alguns segundos...</p>
       </div>
     );
   }
@@ -58,24 +56,22 @@ const ReviewList = ({ reviews, loading }) => {
   }
 
   return (
-    <div className="reviews-container">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Avaliações ({reviews.length})</h2>
+    <div className="mt-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Avaliações ({reviews.length})</h2>
         <Button
-          variant="success"
           onClick={handleExportClick}
           disabled={reviews.length === 0}
+          variant="secondary"
         >
           Exportar CSV
         </Button>
       </div>
-      <Row>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {reviews.map((review, index) => (
-          <Col md={6} lg={4} key={index}>
-            <ReviewCard review={review} />
-          </Col>
+          <ReviewCard key={index} review={review} />
         ))}
-      </Row>
+      </div>
 
       <ProductUrlModal
         show={showUrlModal}

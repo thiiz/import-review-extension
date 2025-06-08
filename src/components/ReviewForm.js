@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Form, Button, InputGroup } from 'react-bootstrap';
 import axios from 'axios';
+import { Button } from './ui/button';
 
 const ReviewForm = ({ onReviewsFetched, setLoading, setError, setSuccess }) => {
   const [url, setUrl] = useState('');
@@ -33,7 +33,7 @@ const ReviewForm = ({ onReviewsFetched, setLoading, setError, setSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('/api/scrape-reviews', { url });
+      const response = await axios.post('http://localhost:5000/api/scrape-reviews', { url });
 
       if (response.data.success) {
         onReviewsFetched(response.data);
@@ -52,25 +52,30 @@ const ReviewForm = ({ onReviewsFetched, setLoading, setError, setSuccess }) => {
   };
 
   return (
-    <div className="url-form">
-      <Form onSubmit={handleSubmit}>
-        <Form.Group>
-          <Form.Label>URL do Produto AliExpress</Form.Label>
-          <InputGroup>
-            <Form.Control
+    <div className="mb-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="url" className="block text-sm font-medium text-foreground">
+            URL do Produto AliExpress
+          </label>
+          <div className="flex gap-2">
+            <input
               type="url"
+              id="url"
+              className={`flex-1 h-10 px-3 py-2 bg-background text-foreground rounded-md border ${
+                urlError ? 'border-destructive' : 'border-input'
+              } focus:outline-none focus:ring-2 focus:ring-ring`}
               placeholder="https://pt.aliexpress.com/item/..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              isInvalid={!!urlError}
             />
-            <Button variant="primary" type="submit">
+            <Button type="submit">
               Obter Avaliações
             </Button>
-          </InputGroup>
-          {urlError && <Form.Text className="text-danger">{urlError}</Form.Text>}
-        </Form.Group>
-      </Form>
+          </div>
+          {urlError && <p className="text-sm text-destructive">{urlError}</p>}
+        </div>
+      </form>
     </div>
   );
 };
